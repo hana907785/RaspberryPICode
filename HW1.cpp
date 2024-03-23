@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <unistd.h>// À¯´Ğ½º¿¡¼­ »ç¿ëÇÏ´Â C ÄÄÆÄÀÏ·¯ Çì´õÆÄÀÏ
+#include <unistd.h>// ìœ ë‹‰ìŠ¤ì—ì„œ ì‚¬ìš©í•˜ëŠ” C ì»´íŒŒì¼ëŸ¬ í—¤ë”íŒŒì¼
 
 
 
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
 
 	cout << "Starting the 3Week HW1 program" << endl;
 
-	LED ledRed(4), ledGreen(17), ledYellow(21);
+	LED ledRed(4), ledGreen(17), ledYellow(27);
 
 	for (int i = 0; i < 50; i++) {
 		ledRed.turnOn();
