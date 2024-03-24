@@ -62,9 +62,9 @@ int main(int argc, char* argv[]) {
 
 	cout << "Starting the 3Week HW1 program" << endl;
 
-	LED ledRed(4), ledGreen(17), ledYellow(27);
+	LED ledRed(22), ledGreen(17), ledYellow(27);
 
-	for (int i = 0; i < 50; i++) {
+	for (int i = 0; i < 20; i++) {
 		ledRed.turnOn();
 		ledGreen.turnOff();
 		ledYellow.turnOff();
@@ -81,11 +81,12 @@ int main(int argc, char* argv[]) {
 		usleep(FLASH_DELAY);
 
 	}
+	
 	ledRed.displayState(); 
-                ledGreen.displayState(); 
-		ledYellow.displayState();
-                cout << "Finished the makeLEDs program" << endl;
+        ledGreen.displayState(); 
+	ledYellow.displayState();
+        cout << "Finished the makeLEDs program" << endl;
 
-		return 0;
+	return 0;
 
 }
