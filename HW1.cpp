@@ -80,6 +80,12 @@ int main(int argc, char* argv[]) {
 		ledYellow.turnOn();
 		usleep(FLASH_DELAY);
 
+
+		ledRed.displayState(); 
+                ledGreen.displayState(); 
+		ledYellow.displayState();
+                cout << "Finished the makeLEDs program" << endl;
+
 		return 0;
 	}
 
