@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
 
 	cout << "Starting the 3Week HW1 program" << endl;
 
-	LED ledRed(22), ledGreen(17), ledYellow(27);
+	LED ledRed(4), ledGreen(17), ledYellow(27);
 
 	for (int i = 0; i < 20; i++) {
 		ledRed.turnOn();
