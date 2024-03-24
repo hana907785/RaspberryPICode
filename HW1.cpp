@@ -8,7 +8,7 @@
 using namespace std;
 
 #define GPIO  "/sys/class/gpio/"
-#define FLASH_DELAY 100000
+#define FLASH_DELAY 1000000
 
 class LED {
 private:
