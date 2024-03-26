@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <unistd.h>// À¯´Ğ½º¿¡¼­ »ç¿ëÇÏ´Â C ÄÄÆÄÀÏ·¯ Çì´õÆÄÀÏ
+#include <unistd.h>// ìœ ë‹‰ìŠ¤ì—ì„œ ì‚¬ìš©í•˜ëŠ” C ì»´íŒŒì¼ëŸ¬ í—¤ë”íŒŒì¼
 
 
 
@@ -89,7 +89,6 @@ int main(int argc, char* argv[]) {
 	ledRed.turnOff();
 	ledGreen.turnOff();
 	ledYellow.turnOff();
-	usleep(FLASH_DELAY);
 
 	ledRed.displayState();
 	ledGreen.displayState();
