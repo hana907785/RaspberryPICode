@@ -81,6 +81,9 @@ int main(int argc, char* argv[]) {
 		usleep(FLASH_DELAY);
 
 	}
+	ledRed.turnOff();
+	ledGreen.turnOff();
+	ledYellow.turnOff();
 	
 	ledRed.displayState(); 
         ledGreen.displayState(); 
