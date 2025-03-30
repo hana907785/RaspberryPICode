@@ -1,71 +1,64 @@
 import RPi.GPIO as GPIO
 from time import sleep
 
-servoPin = 18 
+servoPin = 18  # BCM GPIO 18번
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(servoPin, GPIO.OUT)
 
-servo = GPIO.PWM(servoPin, 50)
+servo = GPIO.PWM(servoPin, 50)  # 50Hz
 servo.start(0)
 
 SERVO_MAX_DUTY = 12
 SERVO_MIN_DUTY = 3
 
 def setServoPos(degree):
-    if degree > 180: degree = 180
-    if degree < 0: degree = 0
+    degree = max(0, min(180, degree))
     duty = SERVO_MIN_DUTY + (degree * (SERVO_MAX_DUTY - SERVO_MIN_DUTY) / 180.0)
-    print(f"→ 각도: {degree}도 (Duty: {duty:.2f})")
+    print(f"서보 이동: {degree}도 (Duty: {duty:.2f})")
     servo.ChangeDutyCycle(duty)
     sleep(0.3)
     servo.ChangeDutyCycle(0)
 
+def rotate_forward(from_angle, to_angle):
+    """서보를 주어진 각도만큼 한 방향으로 회전"""
+    setServoPos(0)       # 서보 시작 위치 초기화
+    sleep(0.5)
+    setServoPos(180)     # 1단계 회전
+    sleep(1)
+    setServoPos(0)       # 되감기
+    sleep(0.5)
+    setServoPos(to_angle)  # 나머지 회전
+    sleep(1)
+
 try:
-    user_minutes = int(input("Time: "))  # 예: 40
-    total_angle = user_minutes * 6
+    user_minutes = int(input("타이머 시간 (분): "))  # 예: 40
+    total_logical_angle = user_minutes * 6  # 1분 = 6도
 
-    # 현재 위치 초기화
-    current_angle = 0
+    print(f"총 논리 각도: {total_logical_angle}도")
 
-    # 초기 설정: 지정 각도까지 이동
-    if total_angle <= 180:
-        setServoPos(total_angle)
-        current_angle = total_angle
+    # 한 방향 회전처럼 보이게 제어
+    if total_logical_angle <= 180:
+        setServoPos(total_logical_angle)
     else:
-        # 1단계: 180도까지 회전
-        setServoPos(180)
-        sleep(1)
+        # 분할 회전
+        rotate_forward(0, total_logical_angle - 180)
 
-        # 2단계: 0도로 복귀
-        setServoPos(0)
-        sleep(1)
-
-        # 3단계: 나머지 각도 회전
-        remaining_angle = total_angle - 180
-        setServoPos(remaining_angle)
-        current_angle = 180 + remaining_angle  # 논리적 위치
-
-    print("Timer Start")
-
-    # 1분마다 6도씩 감소
+    # 감소 루프
+    current_angle = total_logical_angle
     for minute in range(user_minutes):
-        sleep(60)  # 실제 사용 시 60초 (테스트 땐 sleep(2) 등으로 바꿔도 됨)
+        sleep(60)  # 실제는 60초
         current_angle -= 6
+        print(f"{minute+1}분 경과 → 논리 각도: {current_angle}도")
 
-        if current_angle >= 180:
-            # 한 바퀴 이상일 경우 (나머지 각도만 계산해서 표현)
-            setServoPos(180)
-            sleep(1)
-            setServoPos(0)
-            sleep(1)
-            setServoPos(current_angle - 180)
-        else:
+        if current_angle <= 180:
             setServoPos(current_angle)
+        else:
+            rotate_forward(0, current_angle - 180)
 
-    print("Finish!")
+    print("✅ 타이머 종료!")
 
 except KeyboardInterrupt:
-    print("Stop")
+    print("중단됨")
 
 finally:
     servo.stop()
