@@ -1,8 +1,8 @@
 import RPi.GPIO as GPIO
 from time import sleep
 
-servoPin = 12 #임시 핀번호
-GPIO.setmode(GPIO.BOARD)
+servoPin = 18 
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(servoPin, GPIO.OUT)
 
 servo = GPIO.PWM(servoPin, 50)
