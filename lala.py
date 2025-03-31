@@ -1,11 +1,11 @@
 import RPi.GPIO as GPIO
 import time
 from collections import deque
-GPIO.setmode(GPIO.BOARD)
-AIN1=15
+GPIO.setmode(GPIO.BCM)
+AIN1=12
 BIN1=16
-AIN2=18
-BIN2=22
+AIN2=20
+BIN2=21
 sig=deque([1,0,0,0])
 step=400
 dir=1
