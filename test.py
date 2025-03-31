@@ -9,12 +9,16 @@ for pin in StepPins:
     GPIO.output(pin, False)
 
 StepCounter = 0
-StepCount = 4
+StepCount = 8
 
-Seq = [[0,0,0,1],
-       [0,0,1,0],
+Seq = [[1,0,0,0],
+       [1,1,0,0],
        [0,1,0,0],
-       [1,0,0,0]]
+       [0,1,1,0],
+       [0,0,1,0],
+       [0,0,1,1],
+       [0,0,0,1],
+       [1,0,0,1]]
 
 try:
     # 사용자 입력 받기 (분 단위)
