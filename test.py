@@ -39,27 +39,36 @@ def rotate_motor(steps, direction=1, speed=0.01):
         time.sleep(speed)
 
 try:
-    # 사용자 입력 받기
-    duration = float(input("회전할 시간(초)을 입력하세요: "))
+    # 사용자 입력 받기 (분 단위)
+    duration_minutes = float(input("회전할 시간(분)을 입력하세요: "))
     
-    # 60도가 85스텝이라고 가정 (360도 = 512스텝 기준, 60도 = 512/6 ≈ 85)
-    steps_for_60_degrees = 85
-    # 시간당 스텝 수 계산 (duration 동안 60도 회전)
-    steps_per_second = steps_for_60_degrees / duration if duration > 0 else 85
-    total_steps = int(steps_per_second * duration)
+    # 360도(1회전) = 512스텝, 60분 동안 360도 회전
+    steps_per_rotation = 512  # 1회전 스텝 수
+    total_time_seconds = 60 * 60  # 60분 = 3600초
+    steps_per_second = steps_per_rotation / total_time_seconds  # 초당 스텝 수
     
-    print(f"목표 스텝 수: {total_steps} (최대 60도)")
+    # 입력된 시간(분)을 초 단위로 변환
+    duration_seconds = duration_minutes * 60
+    total_steps = int(steps_per_second * duration_seconds)  # 목표 스텝 수
+    
+    # 속도 계산: 입력 시간 동안 total_steps를 수행하도록
+    if total_steps > 0:
+        speed = duration_seconds / total_steps  # 각 스텝당 시간(초)
+    else:
+        speed = 0.01  # 기본값
+    
+    print(f"목표 스텝 수: {total_steps} (최대 360도)")
 
-    # 0도에서 60도까지 회전
-    print("60도로 이동 중...")
-    rotate_motor(total_steps, direction=1, speed=0.01)
+    # 0도에서 목표 각도까지 회전
+    print("목표 각도로 이동 중...")
+    rotate_motor(total_steps, direction=1, speed=speed)
     
     # 잠시 대기
     time.sleep(1)
     
     # 다시 0도로 복귀
     print("0도로 복귀 중...")
-    rotate_motor(total_steps, direction=-1, speed=0.01)
+    rotate_motor(total_steps, direction=-1, speed=speed)
     
 except KeyboardInterrupt:
     print("\n프로그램 종료")
