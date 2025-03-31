@@ -9,8 +9,9 @@ for pin in StepPins:
     GPIO.output(pin, False)
 
 StepCounter = 0
-StepCount = 8
+StepCount = 8  # 8스텝 시퀀스로 변경
 
+# 반/반상 구동 시퀀스 (28BYJ-48 기준)
 Seq = [[1,0,0,0],
        [1,1,0,0],
        [0,1,0,0],
@@ -24,15 +25,15 @@ try:
     # 사용자 입력 받기 (분 단위)
     duration_minutes = float(input("회전할 시간(분)을 입력하세요: "))
     
-    # 60분 입력 시 360도(512스텝)로 설정
-    steps_per_rotation = 2048  # 360도라고 가정한 스텝 수
-    reference_minutes = 60    # 기준 시간(60분)
+    # 360도 = 2048스텝 (28BYJ-48 기준)
+    steps_per_rotation = 2048  # 360도에 해당하는 스텝 수
+    reference_minutes = 60     # 기준 시간(60분)
     
     # 입력값에 비례한 스텝 수 계산
     total_steps = int(steps_per_rotation * (duration_minutes / reference_minutes))
     
     print(f"계산된 스텝 수: {total_steps}")
-    print(f"예상 회전 각도: {total_steps / steps_per_rotation * 360}도")
+    print(f"예상 회전 각도: {total_steps / steps_per_rotation * 360:.2f}도")
 
     # 정방향 회전 (0도 -> 목표 각도)
     print("목표 각도로 이동 중...")
@@ -48,10 +49,15 @@ try:
         if StepCounter == StepCount:
             StepCounter = 0
         if StepCounter < 0:
-            StepCounter = StepCount
+            StepCounter = StepCount - 1
         
-        time.sleep(0.01)  # 원본 속도 유지
-    
+        # 속도 조정: 초반 느리게, 점차 정상 속도
+        sleep_time = 0.02 if step < 100 else 0.01  # 처음 100스텝은 느리게
+        time.sleep(sleep_time)
+        
+        if (step + 1) % 512 == 0:
+            print(f"현재 스텝: {step + 1}, 예상 각도: {(step + 1) / steps_per_rotation * 360:.2f}도")
+
     # 잠시 대기
     time.sleep(1)
     
@@ -71,7 +77,11 @@ try:
         if StepCounter < 0:
             StepCounter = StepCount - 1
         
-        time.sleep(0.01)  # 원본 속도 유지
+        sleep_time = 0.02 if step < 100 else 0.01  # 처음 100스텝은 느리게
+        time.sleep(sleep_time)
+        
+        if (step + 1) % 512 == 0:
+            print(f"복귀 중 스텝: {step + 1}, 예상 각도: {(total_steps - (step + 1)) / steps_per_rotation * 360:.2f}도")
 
 except KeyboardInterrupt:
     print("\n프로그램 종료")
