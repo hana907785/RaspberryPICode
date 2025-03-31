@@ -14,14 +14,14 @@ step_sleep = 0.01  # Consistent speed
 steps_per_rotation = 4096  # 360 degrees
 
 # Step sequence (half-step for 28BYJ-48)
-step_sequence = [[0,0,0,1],
-                 [0,0,1,1],
-                 [0,0,1,0],
-                 [0,1,1,0],
-                 [0,1,0,0],
-                 [1,1,0,0],
+step_sequence = [[1,0,0,1],
                  [1,0,0,0],
-                 [1,0,0,1]]
+                 [1,1,0,0],
+                 [0,1,0,0],
+                 [0,1,1,0],
+                 [0,0,1,0],
+                 [0,0,1,1],
+                 [0,0,0,1]]
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
