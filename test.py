@@ -18,18 +18,19 @@ Seq = [[0,0,0,1],
 
 try:
     # 사용자 입력 받기 (분 단위)
-    duration_minutes = float(input("INPUT TIME: "))
+    duration_minutes = float(input("회전할 시간(분)을 입력하세요: "))
     
-    # 360도(512스텝)를 60분으로 설정
-    steps_per_rotation = 512  # 1회전(360도)에 필요한 스텝 수
-    total_time_minutes = 60   # 360도가 60분
-    steps_per_minute = steps_per_rotation / total_time_minutes  # 분당 스텝 수
+    # 360도(512스텝)를 60분에 매핑
+    steps_per_rotation = 512  # 360도에 해당하는 스텝 수
+    reference_minutes = 60    # 기준 시간(60분)
     
-    # 입력된 시간 동안의 총 스텝 수 계산
-    total_steps = int(steps_per_minute * duration_minutes)
+    # 입력 시간에 비례한 스텝 수 계산 (60분 = 512스텝)
+    total_steps = int(steps_per_rotation * (duration_minutes / reference_minutes))
     
+    print(f"목표 스텝 수: {total_steps}")
+
     # 정방향 회전 (0도 -> 목표 각도)
-    print("Starting...")
+    print("목표 각도로 이동 중...")
     for _ in range(total_steps):
         for pin in range(0, 4):
             xpin = StepPins[pin]
@@ -50,7 +51,7 @@ try:
     time.sleep(1)
     
     # 역방향 회전 (목표 각도 -> 0도)
-    print("Reback...")
+    print("0도로 복귀 중...")
     for _ in range(total_steps):
         for pin in range(0, 4):
             xpin = StepPins[pin]
@@ -68,7 +69,7 @@ try:
         time.sleep(0.01)  # 원본 속도 유지
 
 except KeyboardInterrupt:
-    print("\nFinish")
+    print("\n프로그램 종료")
     GPIO.cleanup()
 except ValueError:
     print("유효한 숫자를 입력해주세요")
