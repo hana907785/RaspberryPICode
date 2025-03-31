@@ -7,13 +7,11 @@ in2 = 16
 in3 = 20
 in4 = 21
 
-# Speed settings
-step_sleep = 0.002  # Default speed
-slow_start_steps = 100  # Number of steps to start slowly
-slow_sleep = 0.05   # Slow speed for initial steps
+# Speed setting
+step_sleep = 0.01  # Consistent speed for stability
 
-# 28BYJ-48: 360 degrees = 4096 steps (half-step)
-steps_per_rotation = 4096
+# 28BYJ-48: Test with 2048 steps per rotation (adjust if needed)
+steps_per_rotation = 2048  # Initially 4096, testing with 2048
 
 # Step sequence
 step_sequence = [[1,0,0,1],
@@ -65,13 +63,10 @@ try:
             GPIO.output(motor_pins[pin], step_sequence[motor_step_counter][pin])
         
         motor_step_counter = (motor_step_counter + 1) % 8  # Clockwise
+        time.sleep(step_sleep)
         
-        # Start slowly
-        sleep_time = slow_sleep if i < slow_start_steps else step_sleep
-        time.sleep(sleep_time)
-        
-        # Debug every 512 steps
-        if (i + 1) % 512 == 0:
+        # Debug every 256 steps
+        if (i + 1) % 256 == 0:
             print(f"Forward step: {i + 1}, Expected angle: {(i + 1) / steps_per_rotation * 360:.2f} degrees")
 
     time.sleep(1)  # Pause
@@ -83,12 +78,11 @@ try:
             GPIO.output(motor_pins[pin], step_sequence[motor_step_counter][pin])
         
         motor_step_counter = (motor_step_counter - 1) % 8  # Counter-clockwise
+        time.sleep(step_sleep)
         
-        sleep_time = slow_sleep if i < slow_start_steps else step_sleep
-        time.sleep(sleep_time)
-        
-        if (i + 1) % 512 == 0:
-            print(f"Reverse step: {i + 1}, Expected angle: {(total_steps - (i + 1)) / steps_per_rotation * 360:.2f} degrees")
+        if (i + 1) % 256 == 0:
+            print(f"Reverse step: "\
+                  f"{i + 1}, Expected angle: {(total_steps - (i + 1)) / steps_per_rotation * 360:.2f} degrees")
 
 except KeyboardInterrupt:
     cleanup()
