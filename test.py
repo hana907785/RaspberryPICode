@@ -37,5 +37,3 @@ try:
 
 except KeyboardInterrupt:
   GPIO.cleanup()
-
-이건 돌아가던데 저건 안 돌아가
