@@ -2,12 +2,12 @@
 import RPi.GPIO as GPIO
 import time
 
-in1 = 12  # 기존 GPIO 번호로 변경
+in1 = 12
 in2 = 16
 in3 = 20
 in4 = 21
 
-# Initial speed settings
+# Speed settings
 step_sleep = 0.002  # Default speed
 slow_start_steps = 100  # Number of steps to start slowly
 slow_sleep = 0.05   # Slow speed for initial steps
@@ -70,8 +70,9 @@ try:
         sleep_time = slow_sleep if i < slow_start_steps else step_sleep
         time.sleep(sleep_time)
         
-        if (i + 1) % 1024 == 0:
-            print(f"Step: {i + 1}, Expected angle: {(i + 1) / steps_per_rotation * 360:.2f} degrees")
+        # Debug every 512 steps
+        if (i + 1) % 512 == 0:
+            print(f"Forward step: {i + 1}, Expected angle: {(i + 1) / steps_per_rotation * 360:.2f} degrees")
 
     time.sleep(1)  # Pause
 
@@ -86,8 +87,8 @@ try:
         sleep_time = slow_sleep if i < slow_start_steps else step_sleep
         time.sleep(sleep_time)
         
-        if (i + 1) % 1024 == 0:
-            print(f"Return step: {i + 1}, Expected angle: {(total_steps - (i + 1)) / steps_per_rotation * 360:.2f} degrees")
+        if (i + 1) % 512 == 0:
+            print(f"Reverse step: {i + 1}, Expected angle: {(total_steps - (i + 1)) / steps_per_rotation * 360:.2f} degrees")
 
 except KeyboardInterrupt:
     cleanup()
