@@ -2,37 +2,40 @@ import RPi.GPIO as GPIO
 import time
 
 GPIO.setmode(GPIO.BCM)
-control_pins = [12, 16, 20, 21]
+StepPins = [12, 16, 20, 21]
 
-for pin in control_pins:
-    GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, 0)
+for pin in StepPins: 
+  GPIO.setup(pin, GPIO.OUT)
+  GPIO.output(pin, False)
 
-# 정확한 하프스텝 시퀀스
-halfstep_seq = [
-    [1,0,0,0],
-    [1,1,0,0],
-    [0,1,0,0],
-    [0,1,1,0],
-    [0,0,1,0],
-    [0,0,1,1],
-    [0,0,0,1],
-    [1,0,0,1]
-]
+StepCounter = 0
 
-delay = 0.005  # 5ms: 느리지만 확실히 움직임
+StepCount = 4
 
-print("모터 회전 테스트 시작!")
+Seq = [[0,0,0,1],
+       [0,0,1,0],
+       [0,1,0,0],
+       [1,0,0,0]]
+
 try:
-    for i in range(512):  # 약 360도 회전
-        for step in halfstep_seq:
-            for pin in range(4):
-                GPIO.output(control_pins[pin], step[pin])
-            time.sleep(delay)
-    print("✅ 회전 완료!")
+  while 1:
+    for pin in range(0, 4):
+        xpin = StepPins[pin]
+        if Seq[StepCounter][pin]!=0:
+          GPIO.output(xpin, True)
+        else:
+          GPIO.output(xpin, False)
+
+    StepCounter += 1
+
+    if (StepCounter == StepCount):
+        StepCounter = 0
+    if (StepCounter < 0):
+        StepCounter = StepCount
+
+    time.sleep(0.01)
 
 except KeyboardInterrupt:
-    print("중지됨")
+  GPIO.cleanup()
 
-finally:
-    GPIO.cleanup()
+이건 돌아가던데 저건 안 돌아가
