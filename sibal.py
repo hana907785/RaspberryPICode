@@ -9,8 +9,18 @@ in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# Step sequences
-step_sequence_forward = [[0,0,0,1],
+# Forward (clockwise) step sequence
+step_sequence_forward = [[1,0,0,1],
+                         [1,0,0,0],
+                         [1,1,0,0],
+                         [0,1,0,0],
+                         [0,1,1,0],
+                         [0,0,1,0],
+                         [0,0,1,1],
+                         [0,0,0,1]]
+
+# Reverse (counter-clockwise) step sequence
+step_sequence_reverse = [[0,0,0,1],
                          [0,0,1,1],
                          [0,0,1,0],
                          [0,1,1,0],
@@ -19,12 +29,57 @@ step_sequence_forward = [[0,0,0,1],
                          [1,0,0,0],
                          [1,0,0,1]]
 
-step_sequence_reverse = list(reversed(step_sequence_forward))
-
 steps_per_rotation = 4096
 step_sleep = 0.005
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
 for pin in motor_pins:
-    GPIO.setup(pin
+    GPIO.setup(pin, GPIO.OUT)
+    GPIO.output(pin, GPIO.LOW)
+
+def cleanup():
+    for pin in motor_pins:
+        GPIO.output(pin, GPIO.LOW)
+    GPIO.cleanup()
+
+try:
+    duration_minutes = float(input("Enter duration in minutes (1 min = 6 degrees): "))
+    direction = input("Enter direction (f = forward, r = reverse): ").strip().lower()
+
+    rotation_degrees = duration_minutes * 6
+    total_steps = int((rotation_degrees / 360) * steps_per_rotation)
+
+    if direction == 'f':
+        step_sequence = step_sequence_forward
+    elif direction == 'r':
+        step_sequence = step_sequence_reverse
+    else:
+        raise ValueError("Direction must be 'f' or 'r'.")
+
+    print(f"Target angle: {rotation_degrees:.1f}°, Steps: {total_steps}")
+    print("Rotating motor...")
+
+    motor_step_counter = 0
+    for _ in range(total_steps):
+        seq = step_sequence[motor_step_counter]
+        for pin, val in zip(motor_pins, seq):
+            GPIO.output(pin, val)
+
+        motor_step_counter = (motor_step_counter + 1) % 8
+        time.sleep(step_sleep)
+
+    print("Rotation complete!")
+
+except KeyboardInterrupt:
+    print("\n[Interrupted by user]")
+    cleanup()
+    exit(1)
+
+except ValueError as ve:
+    print(f"Input error: {ve}")
+    cleanup()
+    exit(1)
+
+cleanup()
+exit(0)
