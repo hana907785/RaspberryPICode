@@ -9,7 +9,7 @@ in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 정방향 시퀀스
+# 하나의 정방향 시퀀스만 사용 (현재 하드웨어 기준에서 역방향으로 동작함)
 step_sequence = [[1,0,0,1],
                  [1,0,0,0],
                  [1,1,0,0],
@@ -42,11 +42,11 @@ try:
     rotation_degrees = duration_minutes * 6
     total_steps = int((rotation_degrees / 360) * steps_per_rotation)
 
-    # 방향에 따라 +1 또는 -1 설정
+    # 방향에 따라 step_direction 설정 (❗정방향은 -1, 역방향은 +1)
     if direction == 'f':
-        step_direction = 1
+        step_direction = -1  # 실제 정방향 회전
     elif direction == 'r':
-        step_direction = -1
+        step_direction = 1   # 실제 역방향 회전
     else:
         raise ValueError("Direction must be 'f' or 'r'.")
 
@@ -60,8 +60,7 @@ try:
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
 
-        # 방향에 따라 인덱스 이동
-        motor_step_counter = (motor_step_counter + step_direction) % len(step_sequence)
+        motor_step_counter = (motor_step_counter + step_direction) % 8
         time.sleep(step_sleep)
 
     print("Rotation complete!")
