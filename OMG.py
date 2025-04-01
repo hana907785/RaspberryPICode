@@ -1,14 +1,14 @@
 import RPi.GPIO as GPIO
 import time
 
-# 핀 설정 (너가 쓰던 순서 그대로)
+# GPIO 핀 설정
 in1 = 12
 in2 = 16
 in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 정확히 작동하던 시퀀스
+# 시퀀스 (이미 잘 작동했던 방향 기준)
 step_sequence = [
     [1,0,0,1],
     [1,0,0,0],
@@ -20,12 +20,9 @@ step_sequence = [
     [0,0,0,1]
 ]
 
-# ✅ 여기서 사용하는 기준 스텝 수는 실제로 잘 돌아가던 값: 4076
-steps_per_rotation = 4076
-step_sleep_fast = 0.001  # 빠른 초기 회전
-step_sleep_slow = 0      # 느린 복귀 (간격은 time.sleep으로 조절)
+steps_per_rotation = 4076  # 360도 회전 기준
+step_sleep = 0.001
 
-# GPIO 초기화
 GPIO.setmode(GPIO.BCM)
 for pin in motor_pins:
     GPIO.setup(pin, GPIO.OUT)
@@ -37,36 +34,32 @@ def cleanup():
     GPIO.cleanup()
 
 try:
-    duration_minutes = float(input("Enter duration in minutes (1 min = 6 degrees): "))
-    rotation_degrees = duration_minutes * 6
-    steps_to_move = int((rotation_degrees / 360) * steps_per_rotation)
+    # ✅ 15도에 해당하는 스텝 수 계산
+    degrees_to_move = 15
+    steps_to_move = int((degrees_to_move / 360) * steps_per_rotation)
+    print(f"Moving {degrees_to_move}° → {steps_to_move} steps")
 
-    print(f"Target angle: {rotation_degrees:.1f}°, Steps: {steps_to_move}")
-    print("▶ Fast rotating to target angle...")
-
-    # ⏩ 빠르게 정방향 회전 (작동했던 방향)
     motor_step_counter = 0
+
+    # ⏩ 정방향 15도
     for _ in range(steps_to_move):
         seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
         motor_step_counter = (motor_step_counter - 1) % 8
-        time.sleep(step_sleep_fast)
+        time.sleep(step_sleep)
 
-    # ⏳ 복귀 시작
-    print("⏳ Returning slowly over time...")
+    time.sleep(1)
 
-    total_seconds = duration_minutes * 60
-    delay_between_steps = total_seconds / steps_to_move
-
+    # ⏪ 역방향 15도
     for _ in range(steps_to_move):
         seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
         motor_step_counter = (motor_step_counter + 1) % 8
-        time.sleep(delay_between_steps)
+        time.sleep(step_sleep)
 
-    print("✅ Done! Back to 0°")
+    print("✅ Done. Moved 15° forward and back.")
 
 except KeyboardInterrupt:
     print("\n[Interrupted]")
