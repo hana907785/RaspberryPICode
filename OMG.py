@@ -9,7 +9,7 @@ in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 정방향 시퀀스 (필요 시 반대로 정의 가능)
+# 정방향 시퀀스
 step_sequence = [[1,0,0,1],
                  [1,0,0,0],
                  [1,1,0,0],
@@ -56,13 +56,12 @@ try:
     # 모터 회전 루프
     motor_step_counter = 0
     for _ in range(total_steps):
-        # 현재 시퀀스 인덱스 계산
-        seq_index = (motor_step_counter % 8) if step_direction == 1 else ((7 - motor_step_counter) % 8)
-        seq = step_sequence[seq_index]
+        seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
 
-        motor_step_counter += step_direction
+        # 방향에 따라 인덱스 이동
+        motor_step_counter = (motor_step_counter + step_direction) % len(step_sequence)
         time.sleep(step_sleep)
 
     print("Rotation complete!")
