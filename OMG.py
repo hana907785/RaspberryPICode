@@ -1,26 +1,29 @@
-#!/usr/bin/python3
 import RPi.GPIO as GPIO
 import time
 
-# GPIO 핀 설정
+# 핀 설정 (너가 쓰던 순서 그대로)
 in1 = 12
 in2 = 16
 in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 하나의 정방향 시퀀스만 사용 (현재 하드웨어 기준에서 역방향으로 동작함)
-step_sequence = [[1,0,0,1],
-                 [1,0,0,0],
-                 [1,1,0,0],
-                 [0,1,0,0],
-                 [0,1,1,0],
-                 [0,0,1,0],
-                 [0,0,1,1],
-                 [0,0,0,1]]
+# 정확히 작동하던 시퀀스
+step_sequence = [
+    [1,0,0,1],
+    [1,0,0,0],
+    [1,1,0,0],
+    [0,1,0,0],
+    [0,1,1,0],
+    [0,0,1,0],
+    [0,0,1,1],
+    [0,0,0,1]
+]
 
-steps_per_rotation = 4096  # 360도 회전 기준
-step_sleep = 0.005         # 속도 조절
+# ✅ 여기서 사용하는 기준 스텝 수는 실제로 잘 돌아가던 값: 4076
+steps_per_rotation = 4076
+step_sleep_fast = 0.001  # 빠른 초기 회전
+step_sleep_slow = 0      # 느린 복귀 (간격은 time.sleep으로 조절)
 
 # GPIO 초기화
 GPIO.setmode(GPIO.BCM)
@@ -34,46 +37,38 @@ def cleanup():
     GPIO.cleanup()
 
 try:
-    # 사용자 입력 받기
     duration_minutes = float(input("Enter duration in minutes (1 min = 6 degrees): "))
-    direction = input("Enter direction (f = forward, r = reverse): ").strip().lower()
-
-    # 회전 각도 및 필요한 스텝 수 계산
     rotation_degrees = duration_minutes * 6
-    total_steps = int((rotation_degrees / 360) * steps_per_rotation)
+    steps_to_move = int((rotation_degrees / 360) * steps_per_rotation)
 
-    # 방향에 따라 step_direction 설정 (❗정방향은 -1, 역방향은 +1)
-    if direction == 'f':
-        step_direction = -1  # 실제 정방향 회전
-    elif direction == 'r':
-        step_direction = 1   # 실제 역방향 회전
-    else:
-        raise ValueError("Direction must be 'f' or 'r'.")
+    print(f"Target angle: {rotation_degrees:.1f}°, Steps: {steps_to_move}")
+    print("▶ Fast rotating to target angle...")
 
-    print(f"Target angle: {rotation_degrees:.1f}°, Steps: {total_steps}")
-    print("Rotating motor...")
-
-    # 모터 회전 루프
+    # ⏩ 빠르게 정방향 회전 (작동했던 방향)
     motor_step_counter = 0
-    for _ in range(total_steps):
+    for _ in range(steps_to_move):
         seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
+        motor_step_counter = (motor_step_counter - 1) % 8
+        time.sleep(step_sleep_fast)
 
-        motor_step_counter = (motor_step_counter + step_direction) % 8
-        time.sleep(step_sleep)
+    # ⏳ 복귀 시작
+    print("⏳ Returning slowly over time...")
 
-    print("Rotation complete!")
+    total_seconds = duration_minutes * 60
+    delay_between_steps = total_seconds / steps_to_move
+
+    for _ in range(steps_to_move):
+        seq = step_sequence[motor_step_counter]
+        for pin, val in zip(motor_pins, seq):
+            GPIO.output(pin, val)
+        motor_step_counter = (motor_step_counter + 1) % 8
+        time.sleep(delay_between_steps)
+
+    print("✅ Done! Back to 0°")
 
 except KeyboardInterrupt:
-    print("\n[Interrupted by user]")
+    print("\n[Interrupted]")
+finally:
     cleanup()
-    exit(1)
-
-except ValueError as ve:
-    print(f"Input error: {ve}")
-    cleanup()
-    exit(1)
-
-cleanup()
-exit(0)
