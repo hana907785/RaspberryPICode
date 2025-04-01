@@ -8,21 +8,22 @@ in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 시퀀스 (이미 잘 작동했던 방향 기준)
+# 시퀀스 (정방향 기준)
 step_sequence = [
-    [1,0,0,1],
-    [1,0,0,0],
-    [1,1,0,0],
-    [0,1,0,0],
-    [0,1,1,0],
-    [0,0,1,0],
-    [0,0,1,1],
-    [0,0,0,1]
+    [1, 0, 0, 1],
+    [1, 0, 0, 0],
+    [1, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 1],
+    [0, 0, 0, 1]
 ]
 
-steps_per_rotation = 4076  # 360도 회전 기준
-step_sleep = 0.001
+steps_per_rotation = 4076         # 360도 기준
+step_sleep = 0.001                # 속도 조절 (빠른 회전)
 
+# GPIO 초기화
 GPIO.setmode(GPIO.BCM)
 for pin in motor_pins:
     GPIO.setup(pin, GPIO.OUT)
@@ -34,14 +35,14 @@ def cleanup():
     GPIO.cleanup()
 
 try:
-    # ✅ 15도에 해당하는 스텝 수 계산
-    degrees_to_move = 15
+    duration_minutes = float(input("⏱ 몇 분 설정할까요? (예: 10): "))
+    degrees_to_move = duration_minutes * 6
     steps_to_move = int((degrees_to_move / 360) * steps_per_rotation)
-    print(f"Moving {degrees_to_move}° → {steps_to_move} steps")
 
+    print(f"➡ 정방향 {degrees_to_move:.1f}도 회전 중 ({steps_to_move} 스텝)")
     motor_step_counter = 0
 
-    # ⏩ 정방향 15도
+    # 정방향 회전
     for _ in range(steps_to_move):
         seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
@@ -49,9 +50,9 @@ try:
         motor_step_counter = (motor_step_counter - 1) % 8
         time.sleep(step_sleep)
 
-    time.sleep(1)
+    time.sleep(1)  # 잠깐 멈춤
 
-    # ⏪ 역방향 15도
+    print("⬅ 역방향 복귀 중...")
     for _ in range(steps_to_move):
         seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
@@ -59,9 +60,9 @@ try:
         motor_step_counter = (motor_step_counter + 1) % 8
         time.sleep(step_sleep)
 
-    print("✅ Done. Moved 15° forward and back.")
+    print("✅ 복귀 완료!")
 
 except KeyboardInterrupt:
-    print("\n[Interrupted]")
+    print("\n[사용자 종료]")
 finally:
     cleanup()
