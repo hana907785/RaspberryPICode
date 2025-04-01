@@ -9,7 +9,7 @@ in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# Standard working sequence (clockwise)
+# Step sequence (your actual working direction)
 step_sequence = [[1,0,0,1],
                  [1,0,0,0],
                  [1,1,0,0],
@@ -40,26 +40,37 @@ def rotate(steps, forward=True):
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
 
+        # 🔄 FLIP DIRECTION
         if forward:
-            motor_step_counter = (motor_step_counter + 1) % 8
-        else:
             motor_step_counter = (motor_step_counter - 1 + 8) % 8
+        else:
+            motor_step_counter = (motor_step_counter + 1) % 8
 
         time.sleep(step_sleep)
 
 try:
-    # 실험 1: 정방향 돌리기
-    rotate(512, forward=True)   # 약 45도
-    time.sleep(1)
+    duration_minutes = float(input("Enter duration in minutes (1 min = 6 degrees): "))
+    direction = input("Enter direction (f = forward, r = reverse): ").strip().lower()
 
-    # 실험 2: 역방향 돌리기
-    rotate(512, forward=False)  # 반대로 45도
-    time.sleep(1)
+    rotation_degrees = duration_minutes * 6
+    total_steps = int((rotation_degrees / 360) * steps_per_rotation)
 
-    print("✅ Test complete!")
+    if direction == 'f':
+        rotate(total_steps, forward=True)
+    elif direction == 'r':
+        rotate(total_steps, forward=False)
+    else:
+        raise ValueError("Direction must be 'f' or 'r'.")
+
+    print("Rotation complete!")
 
 except KeyboardInterrupt:
-    print("\n[Interrupted]")
+    print("\n[Interrupted by user]")
+    cleanup()
+    exit(1)
+
+except ValueError as ve:
+    print(f"Input error: {ve}")
     cleanup()
     exit(1)
 
