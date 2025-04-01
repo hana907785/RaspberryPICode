@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-# 핀 설정
+# GPIO 설정
 IN1, IN2, IN3, IN4 = 12, 16, 20, 21
 GPIO.setmode(GPIO.BCM)
 for pin in (IN1, IN2, IN3, IN4):
@@ -11,12 +11,12 @@ for pin in (IN1, IN2, IN3, IN4):
 # 하프스텝 시퀀스
 halfstep_seq = [
     [1, 0, 0, 1],
-    [1, 0, 0, 0], 
-    [1, 1, 0, 0], 
-    [0, 1, 0, 0], 
-    [0, 1, 1, 0], 
-    [0, 0, 1, 0], 
-    [0, 0, 1, 1], 
+    [1, 0, 0, 0],
+    [1, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 1],
     [0, 0, 0, 1]
 ]
 
@@ -37,9 +37,12 @@ def step_backward(delay=0.005):
 try:
     duration_minutes = float(input("Enter time in minutes (e.g., 15): "))
 
-    degrees_to_rotate = duration_minutes * 6           # 1분 = 6도
-    steps_per_revolution = 2038                        # 정확한 360도 스텝 수
-    steps_to_move = int((degrees_to_rotate / 360) * steps_per_revolution)
+    # ⏱ 1분 = 6도 → 각도 계산
+    degrees_to_rotate = duration_minutes * 6
+
+    # 🎯 1도당 스텝 수 계산
+    steps_per_degree = 2038 / 360
+    steps_to_move = int(degrees_to_rotate * steps_per_degree)
 
     print(f"▶ Fast rotate {degrees_to_rotate:.1f}° → {steps_to_move} steps")
     for _ in range(steps_to_move):
@@ -53,7 +56,7 @@ try:
         step_backward(0)
         time.sleep(delay_between_steps)
 
-    print("✅ Done! Returned to 0°")
+    print("✅ Timer done! Back at 0°.")
 
 except KeyboardInterrupt:
     print("\n[Interrupted]")
