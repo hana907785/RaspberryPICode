@@ -8,7 +8,7 @@ in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 하프 스텝 시퀀스
+# 시퀀스 (정방향 기준)
 step_sequence = [
     [1, 0, 0, 1],
     [1, 0, 0, 0],
@@ -20,8 +20,9 @@ step_sequence = [
     [0, 0, 0, 1]
 ]
 
-steps_per_rotation = 4096            # 360도 회전 기준
-step_sleep = 0.001                   # 빠른 회전 속도
+steps_per_rotation = 4076         # 360도 기준
+step_sleep_fast = 0.001           # 빠른 회전 (정방향)
+step_sleep_slow = None            # 나중에 계산됨
 
 # GPIO 초기화
 GPIO.setmode(GPIO.BCM)
@@ -34,30 +35,33 @@ def cleanup():
         GPIO.output(pin, GPIO.LOW)
     GPIO.cleanup()
 
-def step_motor(steps, forward=True, delay=0.001):
-    idx = 0
+def move_motor(steps, direction=1, delay=0.001):
+    motor_step_counter = 0
     for _ in range(steps):
-        for pin, val in zip(motor_pins, step_sequence[idx]):
+        seq = step_sequence[motor_step_counter]
+        for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
-        idx = (idx - 1) % 8 if forward else (idx + 1) % 8
+        motor_step_counter = (motor_step_counter + direction) % 8
         time.sleep(delay)
 
 try:
     duration_minutes = float(input("⏱ 몇 분 설정할까요? (예: 10): "))
     degrees_to_move = duration_minutes * 6
-    total_steps = int((degrees_to_move / 360) * steps_per_rotation)
+    steps_to_move = int((degrees_to_move / 360) * steps_per_rotation)
 
-    # ✅ 정방향 즉시 회전
-    print(f"➡ 정방향 {degrees_to_move:.1f}도 회전 중 ({total_steps} 스텝)")
-    step_motor(total_steps, forward=True, delay=step_sleep)
+    print(f"➡ 정방향 {degrees_to_move:.1f}도 회전 중 ({steps_to_move} 스텝)")
+    move_motor(steps_to_move, direction=-1, delay=step_sleep_fast)  # 정방향
 
-    # ✅ 역방향 복귀: 1분마다 6도씩 천천히 복귀
-    print("⬅ 역방향 천천히 복귀 중...")
+    # 복귀: 천천히 역방향으로 1분에 6도씩
+    steps_per_6_degrees = int((6 / 360) * steps_per_rotation)
+    delay_per_step = 60 / steps_per_6_degrees  # 1분(60초) 동안 6도 복귀
 
-    for minute in range(int(duration_minutes)):
-        print(f"  🔄 {minute+1}분 경과 - 6도 복귀")
-        step_motor(int((6 / 360) * steps_per_rotation), forward=False, delay=0.003)
-        time.sleep(60)  # 1분 대기
+    print(f"⬅ {duration_minutes:.0f}분에 걸쳐 천천히 복귀 중...")
+    for _ in range(steps_to_move):
+        seq = step_sequence[0]  # 초기화 필요
+        for pin, val in zip(motor_pins, seq):
+            GPIO.output(pin, val)
+        move_motor(1, direction=1, delay=delay_per_step)  # 역방향 (slow)
 
     print("✅ 복귀 완료!")
 
