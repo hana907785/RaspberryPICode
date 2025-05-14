@@ -1,14 +1,14 @@
 import RPi.GPIO as GPIO
 import time
 
-# GPIO 핀 설정
+# GPIO pin configuration
 in1 = 12
 in2 = 16
 in3 = 20
 in4 = 21
 motor_pins = [in1, in2, in3, in4]
 
-# 시퀀스 (정방향 기준)
+# Step sequence (based on original code)
 step_sequence = [
     [1, 0, 0, 1],
     [1, 0, 0, 0],
@@ -20,52 +20,59 @@ step_sequence = [
     [0, 0, 0, 1]
 ]
 
-steps_per_rotation = 4076         # 360도 기준
-step_sleep_fast = 0.001           # 빠른 회전 (정방향)
-step_sleep_slow = None            # 나중에 계산됨
+steps_per_rotation = 4076  # Steps for 360 degrees
+step_sleep = 0.002         # Step delay (adjusted for stability)
 
-# GPIO 초기화
+# Initialize GPIO
 GPIO.setmode(GPIO.BCM)
 for pin in motor_pins:
     GPIO.setup(pin, GPIO.OUT)
     GPIO.output(pin, GPIO.LOW)
 
 def cleanup():
+    """Reset all motor pins and cleanup GPIO."""
     for pin in motor_pins:
         GPIO.output(pin, GPIO.LOW)
     GPIO.cleanup()
 
-def move_motor(steps, direction=1, delay=0.001):
+def rotate_reverse_6_degrees():
+    """Rotate 6 degrees in reverse (approx. 68 steps)."""
+    steps_for_6_degrees = int((6 / 360) * steps_per_rotation)  # Approx. 68 steps
     motor_step_counter = 0
-    for _ in range(steps):
+    for _ in range(steps_for_6_degrees):
         seq = step_sequence[motor_step_counter]
         for pin, val in zip(motor_pins, seq):
             GPIO.output(pin, val)
-        motor_step_counter = (motor_step_counter + direction) % 8
-        time.sleep(delay)
+        motor_step_counter = (motor_step_counter + 1) % 8  # Reverse direction
+        time.sleep(step_sleep)
+    return steps_for_6_degrees
 
 try:
-    duration_minutes = float(input("⏱ 몇 분 설정할까요? (예: 10): "))
-    degrees_to_move = duration_minutes * 6
-    steps_to_move = int((degrees_to_move / 360) * steps_per_rotation)
+    # Get user input
+    duration_minutes = float(input("Enter duration in minutes (e.g., 30): "))
+    total_degrees = duration_minutes * 6
+    total_steps = int((total_degrees / 360) * steps_per_rotation)
 
-    print(f"➡ 정방향 {degrees_to_move:.1f}도 회전 중 ({steps_to_move} 스텝)")
-    move_motor(steps_to_move, direction=-1, delay=step_sleep_fast)  # 정방향
+    print(f"Starting reverse rotation: {duration_minutes:.0f} minutes, "
+          f"{total_degrees:.1f} degrees, {total_steps} steps")
 
-    # 복귀: 천천히 역방향으로 1분에 6도씩
-    steps_per_6_degrees = int((6 / 360) * steps_per_rotation)
-    delay_per_step = 60 / steps_per_6_degrees  # 1분(60초) 동안 6도 복귀
+    # Rotate 6 degrees in reverse every minute
+    for minute in range(int(duration_minutes)):
+        print(f"[Minute {minute + 1}/{duration_minutes:.0f}] Rotating 6 degrees in reverse...")
+        steps_moved = rotate_reverse_6_degrees()
+        remaining_minutes = duration_minutes - (minute + 1)
+        print(f"Completed! Remaining: {remaining_minutes:.0f} minutes, "
+              f"Cumulative rotation: {(minute + 1) * 6:.1f} degrees")
+        
+        # Wait 1 minute unless it's the last rotation
+        if minute < duration_minutes - 1:
+            time.sleep(60)
 
-    print(f"⬅ {duration_minutes:.0f}분에 걸쳐 천천히 복귀 중...")
-    for _ in range(steps_to_move):
-        seq = step_sequence[0]  # 초기화 필요
-        for pin, val in zip(motor_pins, seq):
-            GPIO.output(pin, val)
-        move_motor(1, direction=1, delay=delay_per_step)  # 역방향 (slow)
-
-    print("✅ 복귀 완료!")
+    print("Rotation completed successfully!")
 
 except KeyboardInterrupt:
-    print("\n[사용자 종료]")
+    print("\n[Stopped by user]")
+except ValueError as ve:
+    print(f"Input error: {ve}")
 finally:
     cleanup()
