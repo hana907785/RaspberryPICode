@@ -1,17 +1,15 @@
 import RPi.GPIO as GPIO
 import time
 
-# GPIO pin setup
-IN1, IN2, IN3, IN4 = 12, 16, 20, 21
-MOTOR_PINS = [IN1, IN2, IN3, IN4]
+# GPIO 핀 설정
+in1 = 12
+in2 = 16
+in3 = 20
+in4 = 21
+motor_pins = [in1, in2, in3, in4]
 
-GPIO.setmode(GPIO.BCM)
-for pin in MOTOR_PINS:
-    GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, 0)
-
-# Half-step sequence (8 steps per cycle)
-STEP_SEQUENCE = [
+# 하프 스텝 시퀀스
+step_sequence = [
     [1, 0, 0, 1],
     [1, 0, 0, 0],
     [1, 1, 0, 0],
@@ -19,52 +17,51 @@ STEP_SEQUENCE = [
     [0, 1, 1, 0],
     [0, 0, 1, 0],
     [0, 0, 1, 1],
-    [0, 0, 0, 1],
+    [0, 0, 0, 1]
 ]
 
-STEPS_PER_REV = 4096  # 360 degrees
-STEP_DELAY = 0.002    # step speed
+steps_per_rotation = 4096            # 360도 회전 기준
+step_sleep = 0.001                   # 빠른 회전 속도
 
-def step_motor(sequence, delay):
-    for pattern in sequence:
-        for pin, value in zip(MOTOR_PINS, pattern):
-            GPIO.output(pin, value)
-        time.sleep(delay)
-
-def step_forward(n_steps):
-    for _ in range(n_steps):
-        step_motor(STEP_SEQUENCE, STEP_DELAY)
-
-def step_backward(n_steps):
-    for _ in range(n_steps):
-        step_motor(reversed(STEP_SEQUENCE), STEP_DELAY)
+# GPIO 초기화
+GPIO.setmode(GPIO.BCM)
+for pin in motor_pins:
+    GPIO.setup(pin, GPIO.OUT)
+    GPIO.output(pin, GPIO.LOW)
 
 def cleanup():
-    for pin in MOTOR_PINS:
-        GPIO.output(pin, 0)
+    for pin in motor_pins:
+        GPIO.output(pin, GPIO.LOW)
     GPIO.cleanup()
 
+def step_motor(steps, forward=True, delay=0.001):
+    idx = 0
+    for _ in range(steps):
+        for pin, val in zip(motor_pins, step_sequence[idx]):
+            GPIO.output(pin, val)
+        idx = (idx - 1) % 8 if forward else (idx + 1) % 8
+        time.sleep(delay)
+
 try:
-    # User input in minutes
-    duration_min = int(input("Enter duration in minutes (1 min = 6 degrees): "))
-    target_degrees = duration_min * 6
-    total_steps = int((target_degrees / 360) * STEPS_PER_REV)
+    duration_minutes = float(input("⏱ 몇 분 설정할까요? (예: 10): "))
+    degrees_to_move = duration_minutes * 6
+    total_steps = int((degrees_to_move / 360) * steps_per_rotation)
 
-    print(f"Rotating forward by {target_degrees} degrees ({total_steps} steps)")
-    step_forward(total_steps)
+    # ✅ 정방향 즉시 회전
+    print(f"➡ 정방향 {degrees_to_move:.1f}도 회전 중 ({total_steps} 스텝)")
+    step_motor(total_steps, forward=True, delay=step_sleep)
 
-    print("\nStarting gradual return...")
-    steps_per_minute = int((6 / 360) * STEPS_PER_REV)
+    # ✅ 역방향 복귀: 1분마다 6도씩 천천히 복귀
+    print("⬅ 역방향 천천히 복귀 중...")
 
-    for i in range(duration_min):
-        print(f"Restoring... {i + 1}/{duration_min} minutes")
-        step_backward(steps_per_minute)
-        time.sleep(60)  # wait 1 minute
+    for minute in range(int(duration_minutes)):
+        print(f"  🔄 {minute+1}분 경과 - 6도 복귀")
+        step_motor(int((6 / 360) * steps_per_rotation), forward=False, delay=0.003)
+        time.sleep(60)  # 1분 대기
 
-    print("Return complete.")
+    print("✅ 복귀 완료!")
 
 except KeyboardInterrupt:
-    print("\nInterrupted by user.")
-
+    print("\n[사용자 종료]")
 finally:
     cleanup()
