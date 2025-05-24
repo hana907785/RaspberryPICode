@@ -87,8 +87,7 @@ Future<void> showRoutineAddDialog(
                             children: [
                               DetailItemEditor(
                                 selectedIconPath: selectedDetailIconPath,
-                                onIconChanged: (path) =>
-                                    setStateDialog(() => selectedDetailIconPath = path),
+                                onIconChanged: (path) => setStateDialog(() => selectedDetailIconPath = path),
                                 onAdd: (item) {
                                   if (item['text'] != null && item['text'].toString().isNotEmpty) {
                                     setStateDialog(() => detailItems.add(item));
@@ -226,7 +225,6 @@ Future<void> showRoutineAddDialog(
                                 const SizedBox(width: 8),
                                 Expanded(child: _buildDropdown("횟수", repeatCount, (v) => setStateDialog(() => repeatCount = v ?? repeatCount), !isTimerMode)),
                               ],
-
                             ),
                           ),
                         ],
@@ -241,11 +239,41 @@ Future<void> showRoutineAddDialog(
                             );
                             return;
                           }
-                          if (!isTimerMode && detailItems.isEmpty) {
+
+                          if (selectedIconPath.contains('empty.jpg')) {
                             ScaffoldMessenger.of(scaffoldCtx).showSnackBar(
-                              const SnackBar(content: Text("세부 루틴을 하나 이상 추가해주세요.")),
+                              const SnackBar(content: Text("메인 아이콘을 선택해주세요.")),
                             );
                             return;
+                          }
+
+                          if (!isTimerMode) {
+                            if (detailItems.isEmpty) {
+                              ScaffoldMessenger.of(scaffoldCtx).showSnackBar(
+                                const SnackBar(content: Text("세부 루틴을 하나 이상 추가해주세요.")),
+                              );
+                              return;
+                            }
+
+                            final hasEmptyIcon = detailItems.any((item) => item['iconPath'].contains('empty.jpg'));
+                            if (hasEmptyIcon) {
+                              ScaffoldMessenger.of(scaffoldCtx).showSnackBar(
+                                const SnackBar(content: Text("세부 루틴의 아이콘을 모두 선택해주세요.")),
+                              );
+                              return;
+                            }
+
+                            final hasIncompleteItem = detailItems.any((item) =>
+                            (item['text'] == null || item['text'].toString().trim().isEmpty) ||
+                                (item['iconPath'] == null || item['iconPath'].contains('empty.jpg')) ||
+                                (item['minutes'] == null));
+
+                            if (hasIncompleteItem) {
+                              ScaffoldMessenger.of(scaffoldCtx).showSnackBar(
+                                const SnackBar(content: Text("모든 세부 루틴 항목을 완성해주세요.")),
+                              );
+                              return;
+                            }
                           }
 
                           final nowDate = DateTime.now().toUtc().add(const Duration(hours: 9));
@@ -270,47 +298,64 @@ Future<void> showRoutineAddDialog(
                             date: formattedDate,
                           );
 
-                          // ✅ DB에 저장하고 ID 포함된 savedGroup 받기
                           final savedGroup = await RoutineDatabase.instance.insertRoutine(newGroup);
 
-                          // 💡 유틸 함수들
                           String formatStartTime(TimeOfDay time) {
                             final now = DateTime.now();
                             final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
                             return DateFormat('HH:mm:ss').format(dt);
                           }
 
-                          String stripIconPath(String path) => path.split('/').last;
+                          String stripIconPath(String path) {
+                            final fileName = path.split('/').last;
+                            return fileName.endsWith('.jpg')
+                                ? fileName.replaceAll('.jpg', '.JPG')
+                                : fileName;
+                          }
+
                           final todayStr = DateFormat('yyyy-MM-dd').format(nowDate);
 
-                          // ✅ Bluetooth 전송
                           if (savedGroup.type == 0) {
+                            TimeOfDay addMinutes(TimeOfDay time, int minutesToAdd) {
+                              final dt = DateTime(0, 1, 1, time.hour, time.minute);
+                              final result = dt.add(Duration(minutes: minutesToAdd));
+                              return TimeOfDay(hour: result.hour, minute: result.minute);
+                            }
+
+                            final List<Map<String, dynamic>> jsonList = [];
+                            int offsetMinutes = 0;
+
                             for (final item in savedGroup.items) {
-                              await BluetoothService.instance.sendJson({
-                                "id": savedGroup.id,
+                              final itemStartTime = addMinutes(savedGroup.startTime!, offsetMinutes);
+                              jsonList.add({
+                                "id": item.id,
                                 "type": "routine",
                                 "date": todayStr,
-                                "start_time": savedGroup.startTime != null ? formatStartTime(savedGroup.startTime!) : null,
+                                "start_time": formatStartTime(itemStartTime),
                                 "routine_minutes": item.durationMinutes,
                                 "icon": stripIconPath(item.iconPath),
                                 "routine_name": item.title,
-                                "checked": item.checked,
                                 "group_routine_name": savedGroup.name,
                               });
+                              offsetMinutes += item.durationMinutes;
+                            }
+
+                            if (BluetoothService.instance.isConnected) {
+                              await BluetoothService.instance.sendJsonList(jsonList);
                             }
                           } else if (savedGroup.type == 1) {
-                            await BluetoothService.instance.sendJson({
-                              "id": savedGroup.id,
-                              "type": "timer",
-                              "timer_minutes": savedGroup.totalMinutes,
-                              "rest": savedGroup.restMinutes,
-                              "repeat_count": savedGroup.repeatCount,
-                              "icon": stripIconPath(savedGroup.iconPath),
-                              "timer_name": savedGroup.name,
-                            });
+                            if (BluetoothService.instance.isConnected) {
+                              await BluetoothService.instance.sendJson({
+                                "id": savedGroup.id,
+                                "type": "timer",
+                                "timer_minutes": savedGroup.totalMinutes,
+                                "rest": savedGroup.restMinutes,
+                                "repeat_count": savedGroup.repeatCount,
+                                "icon": stripIconPath(savedGroup.iconPath)
+                              });
+                            }
                           }
 
-                          // ✅ 콜백 및 화면 종료
                           onAdd(savedGroup);
                           Navigator.pop(context);
                         },
@@ -320,7 +365,6 @@ Future<void> showRoutineAddDialog(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text("등록하기", style: TextStyle(color: Colors.white, fontSize: 16)),
-
                       ),
                       const SizedBox(height: 40),
                     ],
