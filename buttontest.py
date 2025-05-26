@@ -29,6 +29,16 @@ GPIO.add_event_detect(green_button, GPIO.RISING, callback=green_pressed, bouncet
 GPIO.add_event_detect(red_button, GPIO.RISING, callback=red_pressed, bouncetime=200)
 GPIO.add_event_detect(yellow_button, GPIO.RISING, callback=yellow_pressed, bouncetime=200)
 
+def green_pressed(channel):
+    print(f"Green (GPIO {channel})")
+
+def red_pressed(channel):
+    print(f"Red (GPIO {channel})")
+
+def yellow_pressed(channel):
+    print(f"Yellow (GPIO {channel})")
+
+
 try:
     print("버튼을 눌러보세요. 종료하려면 Ctrl+C 누르세요.")
     while True:
